@@ -298,7 +298,8 @@ JSON 배열만 반환, 다른 텍스트 없이:
     showToast(`${toAdd.length}건 등록됐습니다`);setTab("list");
   };
 
-  const curM=getMonth(),prevM=getMonth(-1);
+  const [homeOffset,setHomeOffset]=useState(0);
+  const curM=getMonth(homeOffset),prevM=getMonth(homeOffset-1);
   const curTot=useMemo(()=>expenses.filter(e=>mk(e.date)===curM).reduce((a,e)=>a+e.amount,0),[expenses,curM]);
   const prevTot=useMemo(()=>expenses.filter(e=>mk(e.date)===prevM).reduce((a,e)=>a+e.amount,0),[expenses,prevM]);
   const diff=curTot-prevTot,diffPct=prevTot?Math.round(Math.abs(diff)/prevTot*100):null;
@@ -338,9 +339,13 @@ JSON 배열만 반환, 다른 텍스트 없이:
 
       {tab==="home"&&<div style={{padding:20}}>
         <div style={{background:"linear-gradient(135deg,#667eea,#764ba2)",borderRadius:20,padding:"24px 20px",marginBottom:16}}>
-          <div style={{fontSize:13,opacity:0.8,marginBottom:6}}>이번 달 지출</div>
-          <div style={{fontSize:32,fontWeight:800,marginBottom:8}}>₩{fmt(curTot)}</div>
-          <div style={{fontSize:13,opacity:0.85}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+            <button onClick={()=>setHomeOffset(o=>o-1)} style={{background:"rgba(255,255,255,0.2)",border:"none",color:"#fff",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:16}}>‹</button>
+            <div style={{fontSize:13,opacity:0.9,fontWeight:600}}>{curM.replace("-","년 ")}월 지출</div>
+            <button onClick={()=>setHomeOffset(o=>Math.min(o+1,0))} style={{background:homeOffset===0?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.2)",border:"none",color:homeOffset===0?"rgba(255,255,255,0.3)":"#fff",borderRadius:8,width:30,height:30,cursor:homeOffset===0?"default":"pointer",fontSize:16}}>›</button>
+          </div>
+          <div style={{fontSize:32,fontWeight:800,marginBottom:8,textAlign:"center"}}>₩{fmt(curTot)}</div>
+          <div style={{fontSize:13,opacity:0.85,textAlign:"center"}}>
             {prevTot>0?(diff===0?"전월과 동일":diff>0?`전월 대비 ▲ ₩${fmt(Math.abs(diff))} (+${diffPct}%)`:`전월 대비 ▼ ₩${fmt(Math.abs(diff))} (-${diffPct}%)`):"전월 데이터 없음"}
           </div>
         </div>

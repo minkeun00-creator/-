@@ -190,6 +190,13 @@ function App(){
     const amt=+form.amount;
     if(!amt||amt<=0)return showToast("금액을 입력해주세요");
     if(editId){
+      const orig=expenses.find(e=>e.id===editId);
+      const catChanged=orig&&orig.category!==form.category;
+      const sameMemo=form.memo&&expenses.filter(e=>e.id!==editId&&e.memo===form.memo&&e.category!==form.category);
+      if(catChanged&&sameMemo?.length>0){
+        setBulkCatConfirm({editId,form:({...form,amount:amt}),sameMemo,newCat:form.category});
+        return;
+      }
       setExpenses(es=>es.map(e=>e.id===editId?{...form,id:editId,amount:amt}:e));
       setEditId(null);showToast("수정됐습니다");resetForm();setTab("list");return;
     }
@@ -359,7 +366,27 @@ JSON 배열만 반환, 다른 텍스트 없이:
 
       {toast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#4ECDC4",color:"#000",padding:"8px 20px",borderRadius:20,zIndex:999,fontSize:14,fontWeight:600,whiteSpace:"nowrap"}}>{toast}</div>}
 
-      {delCat&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:998,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      {bulkCatConfirm&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:998,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{background:"#1a1a2e",borderRadius:20,padding:24,maxWidth:340,width:"100%"}}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:10}}>카테고리 일괄 변경</div>
+          <div style={{fontSize:14,color:"#ccc",lineHeight:1.7,marginBottom:20}}>
+            <b style={{color:"#FFE66D"}}>'{bulkCatConfirm.form.memo}'</b> 메모의 지출이<br/>
+            <b>{bulkCatConfirm.sameMemo.length+1}건</b> 있습니다.<br/>
+            모두 <b style={{color:catMap[bulkCatConfirm.newCat]||"#aaa"}}>{bulkCatConfirm.newCat}</b>으로 변경할까요?
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>{
+              setExpenses(es=>es.map(e=>e.id===bulkCatConfirm.editId?{...bulkCatConfirm.form,id:bulkCatConfirm.editId}:e));
+              setBulkCatConfirm(null);setEditId(null);showToast("수정됐습니다");resetForm();setTab("list");
+            }} style={{flex:1,padding:12,borderRadius:12,border:"none",background:"#2a2a3a",color:"#aaa",cursor:"pointer",fontSize:13}}>이것만 변경</button>
+            <button onClick={()=>{
+              const {editId:eid,form:f,sameMemo,newCat}=bulkCatConfirm;
+              setExpenses(es=>es.map(e=>e.id===eid?{...f,id:eid}:sameMemo.some(s=>s.id===e.id)?{...e,category:newCat}:e));
+              setBulkCatConfirm(null);setEditId(null);showToast(`${sameMemo.length+1}건 일괄 변경됐습니다`);resetForm();setTab("list");
+            }} style={{flex:1,padding:12,borderRadius:12,border:"none",background:"#667eea",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}>전체 변경</button>
+          </div>
+        </div>
+      </div>}<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:998,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
         <div style={{background:"#1a1a2e",borderRadius:20,padding:24,maxWidth:320,width:"100%"}}>
           <div style={{fontSize:16,fontWeight:700,marginBottom:10}}>카테고리 삭제</div>
           <div style={{fontSize:14,color:"#ccc",lineHeight:1.6,marginBottom:20}}><b style={{color:"#FF6B6B"}}>'{delCat.name}'</b>에 <b>{delCat.cnt}건</b>의 지출이 있습니다.</div>
